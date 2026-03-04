@@ -36,19 +36,11 @@ EM_ASYNC_JS(int, emscripten_fetch_to_vfs_async, (const char *c_path), {
 		window.showFetchIndicator(name);
 	}
 	try {
-		var optimisedPath = path
-			.replace(/\.png$/i, '.webp')
-			.replace(/\.mp4$/i, '.webm');
+		const fetchPath = path
+			.replace(/^(\/game\/(?:backgrounds|graphics)\/.+)\.png$/i, '$1.hau')
+			.replace(/^(\/game\/video\/.+)\.mp4$/i, '$1.hau');
 
-		var response;
-		if (optimisedPath !== path) {
-			response = await fetch(optimisedPath);
-			if (!response.ok) {
-				response = await fetch(path);
-			}
-		} else {
-			response = await fetch(path);
-		}
+		const response = await fetch(fetchPath);
 
 		if (!response.ok) {
 			return -1;

@@ -37,8 +37,8 @@ EM_ASYNC_JS(int, emscripten_fetch_to_vfs_async, (const char *c_path), {
 	}
 	try {
 		const fetchPath = path
-			.replace(/^(\/game\/(?:backgrounds|graphics)\/.+)\.png$/i, '$1.hau')
-			.replace(/^(\/game\/video\/.+)\.mp4$/i, '$1.hau');
+			.replace(/^(\\/game\\/(?:backgrounds|graphics)\\/.+)\\.png$/i, '$1.hau')
+			.replace(/^(\\/game\\/video\\/.+)\\.mp4$/i, '$1.hau');
 
 		const response = await fetch(fetchPath);
 

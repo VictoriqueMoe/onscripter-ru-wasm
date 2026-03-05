@@ -120,6 +120,10 @@ public:
 
 	ONScripter();
 
+	int getScriptPosition() {
+		return static_cast<int>(script_h.getOffset(script_h.getCurrent()));
+	}
+
 	bool scriptExecutionPermitted();
 	void executeLabel();
 	void runScript();

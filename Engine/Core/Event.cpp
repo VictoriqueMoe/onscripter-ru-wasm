@@ -102,6 +102,10 @@ EMSCRIPTEN_KEEPALIVE void ons_toggle_fullscreen() {
 	SDL_PushEvent(&event);
 }
 
+EMSCRIPTEN_KEEPALIVE int ons_get_script_position() {
+	return ons.getScriptPosition();
+}
+
 EMSCRIPTEN_KEEPALIVE void ons_mouse_event(int type, float nx, float ny, int button) {
 	int sw, sh;
 	window.getWindowSize(sw, sh);

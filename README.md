@@ -18,7 +18,7 @@ All changes are gated behind `#ifdef __EMSCRIPTEN__` so the native builds remain
 
 | File                 | Change                                                                                                                                                                                                                                                                                                           |
 |----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `Support/FileIO.cpp` | `EM_ASYNC_JS` hook that intercepts `fopen()` on lazy-loaded files, fetches the real data over HTTP via `await fetch()`, writes it into the Emscripten virtual filesystem, then returns the file handle to the caller. The engine sees synchronous file access while the browser performs async network requests. |
+| `Support/FileIO.cpp` | `EM_ASYNC_JS` hook that intercepts `fopen()` on lazy-loaded files. In local/production mode, fetches the real data over HTTP via `await fetch()`. In remote mode, reads from the user's local game folder via `window.readLocalFile()` (backed by the File System Access API or `<input webkitdirectory>`). Writes the data into the Emscripten virtual filesystem and returns the file handle to the caller. The engine sees synchronous file access regardless of the source. |
 
 ### Video Playback
 

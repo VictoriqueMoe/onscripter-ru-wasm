@@ -30,12 +30,25 @@
 #include <sys/stat.h>
 
 EM_ASYNC_JS(int, emscripten_fetch_to_vfs_async, (const char *c_path), {
-	var path = UTF8ToString(c_path);
+	const path = UTF8ToString(c_path);
 	if (window.showFetchIndicator) {
-		var name = path.substring(path.lastIndexOf('/') + 1);
+		const name = path.substring(path.lastIndexOf('/') + 1);
 		window.showFetchIndicator(name);
 	}
 	try {
+		if (window.readLocalFile) {
+			const gamePath = path.substring('/game/'.length);
+			const localData = await window.readLocalFile(gamePath);
+			if (!localData) {
+				return -1;
+			}
+			FS.writeFile(path, localData);
+			if (window.gameFileSet) {
+				window.gameFileSet.delete(path);
+			}
+			return 0;
+		}
+
 		const fetchPath = path
 			.replace(/^(\\/game\\/(?:backgrounds|graphics)\\/.+)\\.png$/i, '$1.hau')
 			.replace(/^(\\/game\\/video\\/.+)\\.mp4$/i, '$1.hau');
@@ -46,15 +59,15 @@ EM_ASYNC_JS(int, emscripten_fetch_to_vfs_async, (const char *c_path), {
 			return -1;
 		}
 
-		var contentLength = response.headers.get('Content-Length');
-		var data;
+		const contentLength = response.headers.get('Content-Length');
+		let data;
 		if (contentLength && response.body) {
-			var total = parseInt(contentLength, 10);
-			var received = 0;
-			var chunks = [];
-			var reader = response.body.getReader();
+			const total = parseInt(contentLength, 10);
+			let received = 0;
+			const chunks = [];
+			const reader = response.body.getReader();
 			while (true) {
-				var result = await reader.read();
+				const result = await reader.read();
 				if (result.done) {
 					break;
 				}
@@ -65,8 +78,8 @@ EM_ASYNC_JS(int, emscripten_fetch_to_vfs_async, (const char *c_path), {
 				}
 			}
 			data = new Uint8Array(received);
-			var offset = 0;
-			for (var i = 0; i < chunks.length; i++) {
+			let offset = 0;
+			for (let i = 0; i < chunks.length; i++) {
 				data.set(chunks[i], offset);
 				offset += chunks[i].length;
 			}

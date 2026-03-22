@@ -37,6 +37,7 @@ EM_ASYNC_JS(int, emscripten_fetch_to_vfs_async, (const char *c_path), {
 	}
 	try {
 		if (window.classicMode && path.indexOf('/sprites/') !== -1 && path.indexOf('/2/') !== -1) {
+			try { FS.unlink(path); } catch(e) {}
 			return -1;
 		}
 
@@ -154,9 +155,13 @@ EM_JS(void, emscripten_reset_sprite_stubs, (), {
 				if (FS.isDir(stat.mode)) {
 					resetDir(full);
 				} else if (full.endsWith('.png') && stat.size > 0) {
-					FS.writeFile(full, new Uint8Array(0));
-					if (window.gameFileSet) {
-						window.gameFileSet.add(full);
+					if (window.classicMode && full.indexOf('/2/') !== -1) {
+						try { FS.unlink(full); } catch(e) {}
+					} else {
+						FS.writeFile(full, new Uint8Array(0));
+						if (window.gameFileSet) {
+							window.gameFileSet.add(full);
+						}
 					}
 				}
 			}

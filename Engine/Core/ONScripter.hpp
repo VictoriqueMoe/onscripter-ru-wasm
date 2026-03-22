@@ -1556,6 +1556,10 @@ private:
 	ImageCacheController imageCache;
 	SoundCacheController soundCache;
 
+public:
+	void clearImageCache() { imageCache.clearAll(); }
+private:
+
 	bool shouldExit{false};
 	bool canExit{true};
 	std::atomic<ExitType> exitCode{ExitType::None};

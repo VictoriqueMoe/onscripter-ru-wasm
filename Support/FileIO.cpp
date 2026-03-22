@@ -36,8 +36,23 @@ EM_ASYNC_JS(int, emscripten_fetch_to_vfs_async, (const char *c_path), {
 		window.showFetchIndicator(name);
 	}
 	try {
+		if (window.classicMode && path.indexOf('/sprites/') !== -1 && path.indexOf('/2/') !== -1) {
+			return -1;
+		}
+
 		if (window.readLocalFile) {
-			const gamePath = path.substring('/game/'.length);
+			let gamePath = path.substring('/game/'.length);
+			if (window.classicMode && gamePath.startsWith('sprites/')) {
+				const classicPath = 'classic/' + gamePath;
+				const classicData = await window.readLocalFile(classicPath);
+				if (classicData) {
+					FS.writeFile(path, classicData);
+					if (window.gameFileSet) {
+						window.gameFileSet.delete(path);
+					}
+					return 0;
+				}
+			}
 			const localData = await window.readLocalFile(gamePath);
 			if (!localData) {
 				return -1;
@@ -49,8 +64,24 @@ EM_ASYNC_JS(int, emscripten_fetch_to_vfs_async, (const char *c_path), {
 			return 0;
 		}
 
-		const fetchPath = path
+		let fetchPath = path;
+
+		if (window.classicMode && path.startsWith('/game/sprites/')) {
+			const classicPath = path.replace('/game/sprites/', '/classic/sprites/');
+			const classicFetchPath = classicPath
+				.replace(/^(\\/classic\\/sprites\\/.+)\\.png$/i, '$1.hau');
+			try {
+				const classicResp = await fetch(classicFetchPath, { method: 'HEAD' });
+				if (classicResp.ok) {
+					fetchPath = classicPath;
+				}
+			} catch (e) {
+			}
+		}
+
+		fetchPath = fetchPath
 			.replace(/^(\\/game\\/(?:backgrounds|graphics)\\/.+)\\.png$/i, '$1.hau')
+			.replace(/^(\\/classic\\/sprites\\/.+)\\.png$/i, '$1.hau')
 			.replace(/^(\\/game\\/video\\/.+)\\.mp4$/i, '$1.hau');
 
 		const response = await fetch(fetchPath);
@@ -100,6 +131,42 @@ EM_ASYNC_JS(int, emscripten_fetch_to_vfs_async, (const char *c_path), {
 		}
 	}
 });
+
+EM_JS(void, emscripten_reset_sprite_stubs, (), {
+	var spriteDir = '/game/sprites';
+	function resetDir(dir) {
+		try {
+			var entries = FS.readdir(dir);
+			for (var i = 0; i < entries.length; i++) {
+				if (entries[i] === '.' || entries[i] === '..') {
+					continue;
+				}
+				var full = dir + '/' + entries[i];
+				var stat = FS.stat(full);
+				if (FS.isDir(stat.mode)) {
+					resetDir(full);
+				} else if (full.endsWith('.png') && stat.size > 0) {
+					FS.writeFile(full, new Uint8Array(0));
+					if (window.gameFileSet) {
+						window.gameFileSet.add(full);
+					}
+				}
+			}
+		} catch(e) {}
+	}
+	resetDir(spriteDir);
+});
+
+#include "Engine/Core/ONScripter.hpp"
+extern ONScripter ons;
+
+extern "C" {
+EMSCRIPTEN_KEEPALIVE
+void classicModeToggle() {
+	ons.clearImageCache();
+	emscripten_reset_sprite_stubs();
+}
+}
 
 static bool emscripten_needs_fetch(const char *path) {
 	struct stat st;

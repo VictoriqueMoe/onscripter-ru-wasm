@@ -2526,6 +2526,10 @@ int ONScripter::flushoutCommand() {
 	return RET_CONTINUE;
 }
 
+#ifdef __EMSCRIPTEN__
+extern "C" int32_t emscripten_get_original_file_size(const char *c_path);
+#endif
+
 int ONScripter::fileexistCommand() {
 	script_h.readVariable();
 	script_h.pushVariable();
@@ -2538,6 +2542,14 @@ int ONScripter::fileexistCommand() {
 
 	if (script_h.hasMoreArgs()) {
 		script_h.readVariable();
+#ifdef __EMSCRIPTEN__
+		if (found) {
+			int32_t originalSize = emscripten_get_original_file_size(buf);
+			if (originalSize >= 0) {
+				length = static_cast<size_t>(originalSize);
+			}
+		}
+#endif
 		script_h.setInt(&script_h.current_variable, static_cast<int32_t>(length));
 	}
 

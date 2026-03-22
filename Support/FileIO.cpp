@@ -132,6 +132,14 @@ EM_ASYNC_JS(int, emscripten_fetch_to_vfs_async, (const char *c_path), {
 	}
 });
 
+EM_JS(int32_t, emscripten_get_original_file_size, (const char *c_path), {
+	var path = '/game/' + UTF8ToString(c_path);
+	if (window.originalFileSizes && window.originalFileSizes.has(path)) {
+		return window.originalFileSizes.get(path);
+	}
+	return -1;
+});
+
 EM_JS(void, emscripten_reset_sprite_stubs, (), {
 	var spriteDir = '/game/sprites';
 	function resetDir(dir) {
